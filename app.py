@@ -46,7 +46,7 @@ def chat():
         bot_reply = response.choices[0].message.content
     except Exception as e:
         print(f"Error: {e}")
-        bot_// This helps in debugging via logs
+        # This helps in debugging via logs
         bot_reply = "Sorry, naay gamay nga problema sa system. Palihug tawag sa 0912-345-6789."
 
     return jsonify({"reply": bot_reply})

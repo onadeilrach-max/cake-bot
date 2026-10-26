@@ -4,8 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# KINI ANG CONFIGURATION PARA SA GROQ
-# Ang API key kuhaon gikan sa Render Environment Variables (OPENAI_API_KEY)
+# ONE-SHOT CONFIGURATION: Direct connection to Groq using Render Variables
 client = openai.OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
@@ -31,16 +30,23 @@ def index():
 def chat():
     user_message = request.json.get("message")
     
+    if not user_message:
+        return jsonify({"reply": "Palihug pag-type og mensahe."}), 400
+
     try:
+        # Using Llama3 model via Groq
         response = client.chat.completions.create(
-            model="llama3-8b-8192", # Kini ang standard fast model sa Groq
+            model="llama3-8b-8192",
             messages=[
                 {"role": "system", "content": f"You are a friendly assistant for Sweet Moments Cake Shop. Use this information: {CAKE_SHOP_INFO}. Answer politely. If the answer is not in the info, ask them to call 0912-345-6789."},
                 {"role": "user", "content": user_message}
-            ]
+            ],
+            temperature=0.7
         )
         bot_reply = response.choices[0].message.content
     except Exception as e:
+        print(f"Error: {e}")
+        bot_// This helps in debugging via logs
         bot_reply = "Sorry, naay gamay nga problema sa system. Palihug tawag sa 0912-345-6789."
 
     return jsonify({"reply": bot_reply})

@@ -1,52 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="ceb">
 <head>
-    <title>Sweet Moments Bot</title>
-    <style>
-        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f9; }
-        #chat-box { width: 350px; height: 450px; border: 1px solid #ccc; overflow-y: scroll; background: white; padding: 10px; margin-bottom: 10px; border-radius: 10px; }
-        .msg { margin: 5px 0; padding: 8px; border-radius: 5px; }
-        .user { background: #dcf8c6; text-align: right; }
-        .bot { background: #ebebeb; text-align: left; }
-        #input-area { display: flex; gap: 5px; }
-        input { padding: 10px; width: 250px; border-radius: 5px; border: 1px solid #ccc; }
-        button { padding: 10px; cursor: pointer; background: #ff69b4; color: white; border: none; border-radius: 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cake Bot</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 12px; background: #fff8f3; }
+    h2 { margin: 0 0 8px; }
+    #box { height: 70vh; overflow-y: auto; border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: #fff; }
+    .msg { max-width: 85%; padding: 8px 12px; border-radius: 14px; margin: 6px 0; white-space: pre-wrap; word-wrap: break-word; }
+    .me { background: #0a58ca; color: #fff; margin-left: auto; }
+    .bot { background: #f1f1f1; color: #222; margin-right: auto; }
+    #row { display: flex; gap: 6px; margin-top: 8px; }
+    #msg { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+    button { padding: 12px 18px; border: 0; border-radius: 8px; background: #e0457b; color: #fff; font-size: 16px; }
+    button:disabled { opacity: 0.5; }
+  </style>
 </head>
 <body>
-    <h2>🎂 Sweet Moments Bot</h2>
-    <div id="chat-box"></div>
-    <div id="input-area">
-        <input type="text" id="user-input" placeholder="Ask about cakes...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+  <h2>🍰 Cake Bot</h2>
+  <div id="box"></div>
+  <div id="row">
+    <input id="msg" placeholder="Pangutana..." autocomplete="off">
+    <button id="btn">Send</button>
+  </div>
 
-    <script>
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const chatBox = document.getElementById('chat-box');
-            if (!input.value) return;
+  <script>
+    const box = document.getElementById("box");
+    const msg = document.getElementById("msg");
+    const btn = document.getElementById("btn");
+    const history = [];
 
-            const userText = input.value;
-            chatBox.innerHTML += `<div class="msg user">${userText}</div>`;
-            input.value = '';
+    function add(cls, text) {
+      const d = document.createElement("div");
+      d.className = "msg " + cls;
+      d.textContent = text;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
+      return d;
+    }
 
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userText })
-                });
-                const data = await response.json();
-                
-                // KINI ANG FIX: 'data.response' must match the Python key
-                const botText = data.response || "No response from bot.";
-                chatBox.innerHTML += `<div class="msg bot">${botText}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (e) {
-                chatBox.innerHTML += `<div class="msg bot">Error connecting to server.</div>`;
-            }
-        }
-    </script>
+    add("bot", "Kumusta! Unsa akong matabang nimo bahin sa among cakes? 🎂");
+
+    async function send() {
+      const text = msg.value.trim();
+      if (!text || btn.disabled) return;
+
+      add("me", text);
+      history.push({ role: "user", content: text });
+      msg.value = "";
+      btn.disabled = true;
+      const typing = add("bot", "...");
+
+      try {
+        const r = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ history: history })
+        });
+        const data = await r.json();
+        typing.textContent = data.reply;
+        if (r.ok) history.push({ role: "assistant", content: data.reply });
+        else history.pop();
+      } catch (e) {
+        typing.textContent = "Naay problema sa koneksyon.";
+        history.pop();
+      }
+      btn.disabled = false;
+      msg.focus();
+    }
+
+    btn.addEventListener("click", send);
+    msg.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  </script>
 </body>
 </html>
